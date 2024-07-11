@@ -36,3 +36,28 @@ type CreateAgentResponse struct {
 	Message string                `json:"message"`
 	Agent   AgentDetailedResponse `json:"data"`
 }
+
+type GetAgentsQueryParams struct {
+	Page      int    `form:"page"`
+	PageSize  int    `form:"page_size"`
+	IPAddress string `form:"ip_address"`
+	SortBy    string `form:"sort_by"`
+	Order     string `form:"order"`
+}
+
+type AgentPagination struct {
+	TotalAgents int64 `json:"total_agents"`
+	TotalPages  int   `json:"total_pages"`
+	CurrentPage int   `json:"current_page"`
+	PerPage     int   `json:"per_page"`
+}
+
+type AgentsData struct {
+	Agents     []AgentResponse `json:"agents"`
+	Pagination AgentPagination `json:"pagination"`
+}
+
+type GetAgentsResponse struct {
+	Message string     `json:"message"`
+	Data    AgentsData `json:"data"`
+}

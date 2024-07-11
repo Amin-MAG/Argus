@@ -66,6 +66,87 @@ func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 }
 
 func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
+	// Handle query params
+	var queryParams GetAgentsQueryParams
+	if err := ctx.ShouldBindQuery(&queryParams); err != nil {
+		logger.WithError(err).Debug("cannot bind query params")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "bad query params"})
+		return
+	}
+	if queryParams.Page == 0 {
+		queryParams.Page = AgentsDefaultPage
+	}
+	if queryParams.PageSize == 0 {
+		queryParams.PageSize = AgentsDefaultPageSize
+	}
+	agentsFilter := &db.AgentFilter{}
+	if queryParams.IPAddress != "" {
+		agentsFilter.IPAddress = &queryParams.IPAddress
+	}
+	agentSort := &db.AgentSort{}
+	if queryParams.SortBy != "" {
+		if !slices.Contains(ValidAgentSorts, queryParams.SortBy) {
+			logger.WithField("sort_by", queryParams.SortBy).Debug("cannot parse the sort by parameter")
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error": "the valid fields are: id",
+			})
+			return
+		}
+		agentSort.SortBy = &queryParams.SortBy
+	}
+	if queryParams.Order != "" {
+		if !slices.Contains(ValidAgentOrders, queryParams.Order) {
+			logger.WithField("order", queryParams.Order).Debug("cannot parse the order parameter")
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error": "the valid fields are: asc, desc",
+			})
+			return
+		}
+		agentSort.OrderBy = &queryParams.Order
+	}
+
+	// Retrieve agents from database
+	agentsResult, err := gh.db.GetAllAgents(ctx, agentsFilter, queryParams.Page, queryParams.PageSize, agentSort)
+	if err != nil {
+		logger.WithError(err).Warn("cannot retrieve the agents from the database")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "cannot retrieve the agents from the database"})
+		return
+	}
+	agentStats := AgentPagination{
+		TotalAgents: agentsResult.TotalAgents,
+		TotalPages:  int(math.Ceil(float64(agentsResult.TotalAgents) / float64(queryParams.PageSize))),
+		CurrentPage: queryParams.Page,
+		PerPage:     queryParams.PageSize,
+	}
+
+	// Handle no agent found
+	if len(agentsResult.Agents) == 0 {
+		ctx.JSON(http.StatusNotFound, GetAgentsResponse{
+			Message: "there is no agents for this page",
+			Data: AgentsData{
+				Agents:     []AgentResponse{},
+				Pagination: agentStats,
+			},
+		})
+		return
+	}
+
+	// Converting the agents to response model
+	var agents []AgentResponse
+	for _, a := range agentsResult.Agents {
+		agents = append(agents, AgentResponse{
+			ID:        a.ID,
+			IPAddress: a.IPAddress,
+		})
+	}
+
+	ctx.JSON(http.StatusOK, GetAgentsResponse{
+		Message: "retrieved agents successfully",
+		Data: AgentsData{
+			Agents:     agents,
+			Pagination: agentStats,
+		},
+	})
 }
 
 func (gh *GinHandler) HandleGetAgentDetail(ctx *gin.Context) {
