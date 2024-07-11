@@ -1,0 +1,8 @@
+vendor
+.env.local
+.env.compose
+prometheus.yml
+docker-compose-dev.yml
+docker-compose.yml
+.git
+.idea
