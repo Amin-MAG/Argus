@@ -150,4 +150,30 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 }
 
 func (gh *GinHandler) HandleGetAgentDetail(ctx *gin.Context) {
+	// Parsing the agent_id
+	agentIDParam, err := strconv.Atoi(ctx.Param("agent_id"))
+	if err != nil {
+		logger.WithError(err).Warn("cannot parse agent id")
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "agent_id is not provided or is not valid",
+		})
+		return
+	}
+	agentID := uint(agentIDParam)
+
+	// Retrieve the agent from the database
+	agent, err := gh.db.GetAgentByID(ctx, agentID)
+	if err != nil {
+		logger.WithError(err).Warn("cannot retrieve agent by id")
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "cannot find such agent by id"})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, AgentDetailedResponse{
+		ID:        agent.ID,
+		CreatedAt: agent.CreatedAt,
+		IPAddress: agent.IPAddress,
+		ASN:       agent.ASN,
+		ISP:       agent.ISP,
+	})
 }
