@@ -1,0 +1,14 @@
+version: "3"
+services:
+  database:
+    image: "postgres:14.2"
+    volumes:
+      - argus_db_data:/var/lib/postgresql/data/
+    env_file:
+      - .env.local
+    container_name: argus_database
+    ports:
+      - "5432:5432"
+
+volumes:
+  argus_db_data:
