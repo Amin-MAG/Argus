@@ -1,0 +1,40 @@
+version: "3"
+services:
+  database:
+    image: "postgres:14.2"
+    volumes:
+      - argus_db_data:/var/lib/postgresql/data/
+    env_file:
+      - .env.compose
+    container_name: argus_database
+
+  argus:
+    image: argus
+    build: .
+    container_name: argus
+    env_file:
+      - .env.compose
+    restart: on-failure
+    depends_on:
+      - database
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: argus_prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    # TODO: Remove the port for production
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:10.4.5
+    container_name: argus_grafana
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.compose
+
+
+volumes:
+  argus_db_data:
