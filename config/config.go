@@ -13,7 +13,8 @@ type Config struct {
 		Port    string `env:"SERVING_PORT" env-default:"8081" env-description:"Port number for Argus API"`
 	}
 	IPInfo struct {
-		Token string `env:"IP_INFO_TOKEN" env-default:"<secret>" env-description:"Token used to connect to IP Info API"`
+		DefaultTimeoutInSecs int64  `env:"IP_INFO_DEFAULT_TIMEOUT_IN_SECS" env-default:"5" env-description:"Default timeout in seconds"`
+		Token                string `env:"IP_INFO_TOKEN" env-default:"<secret>" env-description:"Token used to connect to IP Info API"`
 	}
 	Database struct {
 		Host     string `env:"POSTGRES_HOST" env-default:"localhost" env-description:"Database host for service"`

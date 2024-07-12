@@ -75,7 +75,7 @@ func getTestDatabase(ctx context.Context, t *testing.T) DB {
 	uri, err := postgresContainer.ConnectionString(ctx)
 	assert.NoError(t, err)
 
-	// Create the vcloud db instance of the database
+	// Create the db instance of the database
 	tdb, err := NewGormDBWithURI(ctx, uri, logger.GetLogger())
 	assert.NoError(t, err, "can not connect to the database", err)
 

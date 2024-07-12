@@ -3,11 +3,14 @@ package handlers
 import (
 	"argus/internal/db"
 	"argus/pkg/logger"
+	"context"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"math"
 	"net/http"
 	"slices"
 	"strconv"
+	"time"
 )
 
 // Constants for default values and sorting orders.
@@ -41,7 +44,7 @@ func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 	var createRequest CreateAgentRequest
 	if err := ctx.ShouldBindJSON(&createRequest); err != nil {
 		logger.WithError(err).Debug("cannot parse create new agent request")
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "cannot parse request body"})
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "cannot parse request body"})
 		return
 	}
 
@@ -49,15 +52,24 @@ func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 	err := createRequest.validate()
 	if err != nil {
 		logger.WithError(err).Debug("cannot validate create new agent request")
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
+	// Create a context timeout to circuit break in case of long API call
+	getIPInfoCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 	// Make a call to IPInfo to get the stats about IP
-	stats, err := gh.ipStatsGatherer.GetInfo(ctx, createRequest.IPAddress)
+	stats, err := gh.ipStatsGatherer.GetInfo(getIPInfoCtx, createRequest.IPAddress)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			logger.WithField("ip", createRequest.IPAddress).WithError(err).Warn("timeout exceeded for IPInfo API")
+			ctx.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: "timeout exceeded"})
+			return
+		}
+
 		logger.WithField("ip", createRequest.IPAddress).WithError(err).Warn("cannot gather statistics for this IP address")
-		ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": "cannot gather statistics for this IP address"})
+		ctx.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: "cannot gather statistics for this IP address"})
 		return
 	}
 
@@ -72,7 +84,7 @@ func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 	})
 	if err != nil {
 		logger.WithError(err).Warn("cannot create agent")
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "cannot create agent"})
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "cannot create agent"})
 		return
 	}
 
@@ -112,7 +124,7 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 	var queryParams GetAgentsQueryParams
 	if err := ctx.ShouldBindQuery(&queryParams); err != nil {
 		logger.WithError(err).Debug("cannot bind query params")
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "bad query params"})
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "bad query params"})
 		return
 	}
 	if queryParams.Page == 0 {
@@ -129,8 +141,8 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 	if queryParams.SortBy != "" {
 		if !slices.Contains(ValidAgentSorts, queryParams.SortBy) {
 			logger.WithField("sort_by", queryParams.SortBy).Debug("cannot parse the sort by parameter")
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error": "the valid fields are: id",
+			ctx.JSON(http.StatusBadRequest, ErrorResponse{
+				Error: "the valid fields are: id",
 			})
 			return
 		}
@@ -139,8 +151,8 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 	if queryParams.Order != "" {
 		if !slices.Contains(ValidAgentOrders, queryParams.Order) {
 			logger.WithField("order", queryParams.Order).Debug("cannot parse the order parameter")
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error": "the valid fields are: asc, desc",
+			ctx.JSON(http.StatusBadRequest, ErrorResponse{
+				Error: "the valid fields are: asc, desc",
 			})
 			return
 		}
@@ -151,7 +163,7 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 	agentsResult, err := gh.db.GetAllAgents(ctx, agentsFilter, queryParams.Page, queryParams.PageSize, agentSort)
 	if err != nil {
 		logger.WithError(err).Warn("cannot retrieve the agents from the database")
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "cannot retrieve the agents from the database"})
+		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "cannot retrieve the agents from the database"})
 		return
 	}
 	agentStats := AgentPagination{
@@ -209,8 +221,8 @@ func (gh *GinHandler) HandleGetAgentDetail(ctx *gin.Context) {
 	agentIDParam, err := strconv.Atoi(ctx.Param("agent_id"))
 	if err != nil {
 		logger.WithError(err).Warn("cannot parse agent id")
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "agent_id is not provided or is not valid",
+		ctx.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "agent_id is not provided or is not valid",
 		})
 		return
 	}
@@ -220,7 +232,7 @@ func (gh *GinHandler) HandleGetAgentDetail(ctx *gin.Context) {
 	agent, err := gh.db.GetAgentByID(ctx, agentID)
 	if err != nil {
 		logger.WithError(err).Warn("cannot retrieve agent by id")
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "cannot find such agent by id"})
+		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "cannot find such agent by id"})
 		return
 	}
 
