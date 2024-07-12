@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/ipinfo/go/v2/ipinfo"
 	"github.com/sirupsen/logrus"
 )
 
@@ -56,13 +57,14 @@ Configuration: %+v
 	log.Info("connected to the argus database")
 
 	// Create the IP Info client
-	ipInfoClient, err := iputil.NewIPInfoClient(cfg.IPInfo.Token)
+	ipInfoClient := ipinfo.NewClient(nil, nil, cfg.IPInfo.Token)
+	argusIpClient, err := iputil.NewArgusIPClient(ipInfoClient)
 	if err != nil {
 		log.WithError(err).Fatal(err)
 	}
 
 	// Create Gin HTTP Server
-	s, err := routes.NewGinServer(cfg, gormDB, ipInfoClient)
+	s, err := routes.NewGinServer(cfg, gormDB, argusIpClient)
 	if err != nil {
 		log.WithError(err).Fatal("error in creating API server")
 	}

@@ -2,29 +2,27 @@ package iputil
 
 import (
 	"context"
-	"fmt"
 	"github.com/ipinfo/go/v2/ipinfo"
 	"net"
 )
 
-type IPInfoClient struct {
-	client *ipinfo.Client
+type IPInfoClient interface {
+	GetIPInfo(ip net.IP) (*ipinfo.Core, error)
 }
 
-func NewIPInfoClient(token string) (IPStatsGatherer, error) {
-	client := ipinfo.NewClient(nil, nil, token)
-	return &IPInfoClient{client: client}, nil
+type ArgusIPInfoClient struct {
+	client IPInfoClient
 }
 
-func (ipi *IPInfoClient) GetInfo(ctx context.Context, ip string) (*Stats, error) {
+func NewArgusIPClient(client IPInfoClient) (IPStatsGatherer, error) {
+	return &ArgusIPInfoClient{client: client}, nil
+}
+
+func (ipi *ArgusIPInfoClient) GetInfo(ctx context.Context, ip string) (*Stats, error) {
 	info, err := ipi.client.GetIPInfo(net.ParseIP(ip))
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(info.Country)
-	fmt.Println(info.City)
-	fmt.Println(info.Location)
 
 	return &Stats{
 		IP:          info.IP,
