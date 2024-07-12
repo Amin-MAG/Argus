@@ -8,7 +8,7 @@ import (
 	"argus/pkg/logger"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/zsais/go-gin-prometheus"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 	"net/http"
 )
 
@@ -22,11 +22,6 @@ func NewGinServer(cfg config.Config, db db.DB, ipStatsGatherer iputil.IPStatsGat
 	// Create new engine for the server
 	engine := gin.Default()
 
-	// Set up the middlewares
-	// TODO: Add middlewares here
-	p := ginprometheus.NewPrometheus("gin")
-	p.Use(engine)
-
 	// Create the HTTP server
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.Argus.Port),
@@ -36,6 +31,13 @@ func NewGinServer(cfg config.Config, db db.DB, ipStatsGatherer iputil.IPStatsGat
 
 	// Create new Gin handler
 	ginHandler := handlers.NewGinHandler(cfg, db, ipStatsGatherer)
+
+	// Set up the middlewares
+	p := ginprometheus.NewPrometheus("gin")
+	p.Use(engine)
+	if cfg.Argus.IsProductionMode {
+		engine.Use(ginHandler.BillingMiddleware())
+	}
 
 	// Register routes of modules
 	v1 := engine.Group(ApiV1)

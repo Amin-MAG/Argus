@@ -11,6 +11,9 @@ type Config struct {
 		// Gin
 		GinMode string `env:"GIN_MODE" env-default:"debug" env-description:"Gin framework mode (release or debug)"`
 		Port    string `env:"SERVING_PORT" env-default:"8081" env-description:"Port number for Argus API"`
+
+		// APIKey: Just for testing purposes, API_Keys of agents should be managed by a separate table
+		APIKey string `env:"API_KEY" env-default:"test_api_key" env-description:"API key"`
 	}
 	IPInfo struct {
 		DefaultTimeoutInSecs int64  `env:"IP_INFO_DEFAULT_TIMEOUT_IN_SECS" env-default:"5" env-description:"Default timeout in seconds"`
@@ -52,6 +55,7 @@ func (c Config) SecureClone() Config {
 	// Censor critical values
 	maskConfig(&sc.Database.Password)
 	maskConfig(&sc.IPInfo.Token)
+	maskConfig(&sc.Argus.APIKey)
 
 	return sc
 }
