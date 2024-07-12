@@ -1,8 +1,8 @@
 # Argus
 
+![Argus Banner](./docs/images/argus-banner.jpeg)
+
 [![codecov](https://codecov.io/github/Amin-MAG/Argus/graph/badge.svg?token=AL8RSEOJ2C)](https://codecov.io/github/Amin-MAG/Argus)
-
-
 
 ## API Documentation
 
@@ -14,7 +14,16 @@ The `swagger` file (`api.yml`) exists in `docs` directory. You can see All APIs 
 + `cmd` : Service entry points (Argus service).
 + `config` : Files containing configuration structs for Argus service.
 + `internal` : all application specific logic are implemented here.
-+ `pkg`: General purpose packages like `logger`
+  + `db`: Database schema and queries.
+  + `handlers`: All Gin handlers.
+  + `iputil`: Customized wrapper for IPInfo service.
+  + `routes`: Creating Gin server and Routing different requests. 
++ `pkg`: General purpose packages like `logger`, `otel`.
++ `test`: Contains scripts for load testing
+
+## System Architecture
+
+![Argus Design](./docs/images/argus-design.jpg)
 
 ## Developers Guide
 
@@ -23,14 +32,8 @@ The `swagger` file (`api.yml`) exists in `docs` directory. You can see All APIs 
 To update the swagger docs you can use
 
 ```bash
-# Swagger
-# This can be added to the pre-commit script
-if command -v swag; then
-  echo "swag init -g ./cmd/argus/main.go -o api"
-  swag init -g ./cmd/argus/main.go -o api
-fi
+swag init -g ./cmd/argus/main.go -o api
 ```
-
 ### Formatting
 
 ```bash
