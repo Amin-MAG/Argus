@@ -11,6 +11,14 @@ const (
 	ServiceDown = "down"
 )
 
+// Ping checks for health of the system
+// @Summary Check health status
+// @Description Check if the health of system is ok or not
+// @Tags ping
+// @Accept json
+// @Produce json
+// @Success 200 {object} PingResponse
+// @Router /ping [get]
 func (gh *GinHandler) Ping(ctx *gin.Context) {
 	dbStatus := ServiceUp
 	err := gh.db.Ping(ctx)
@@ -19,7 +27,7 @@ func (gh *GinHandler) Ping(ctx *gin.Context) {
 		dbStatus = ServiceDown
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"database_status": dbStatus,
+	ctx.JSON(http.StatusOK, PingResponse{
+		DatabaseStatus: dbStatus,
 	})
 }

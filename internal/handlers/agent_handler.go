@@ -10,6 +10,7 @@ import (
 	"strconv"
 )
 
+// Constants for default values and sorting orders.
 const (
 	AgentsDefaultPage     = 1
 	AgentsDefaultPageSize = 10
@@ -21,10 +22,21 @@ const (
 )
 
 var (
-	ValidAgentSorts  = []string{"id"}
-	ValidAgentOrders = []string{Asc, Desc}
+	ValidAgentSorts  = []string{"id"}      // ValidAgentSorts defines valid fields for sorting agents.
+	ValidAgentOrders = []string{Asc, Desc} // ValidAgentOrders defines valid sorting orders.
 )
 
+// HandleCreateAgent handles requests to create a new agent
+// @Summary Create a new agent
+// @Description Create a new agent with the provided IP address and retrieve its details
+// @Tags agents
+// @Accept json
+// @Produce json
+// @Param request body CreateAgentRequest true "Request body for creating a new agent"
+// @Success 201 {object} CreateAgentResponse "Successfully created agent"
+// @Failure 400 {object} ErrorResponse "Bad request"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /agents [post]
 func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 	var createRequest CreateAgentRequest
 	if err := ctx.ShouldBindJSON(&createRequest); err != nil {
@@ -79,6 +91,22 @@ func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 	})
 }
 
+// HandleGetAgents handles retrieving agents
+// @Summary Get a list of agents
+// @Description Retrieve a list of agents based on optional query parameters
+// @Tags agents
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number for pagination (default is 1)"
+// @Param page_size query int false "Number of agents per page (default is 10)"
+// @Param ip_address query string false "Filter agents by IP address"
+// @Param sort_by query string false "Field to sort agents by (e.g., 'id')"
+// @Param order query string false "Sorting order ('asc' or 'desc')"
+// @Success 200 {object} GetAgentsResponse "Successfully retrieved agents"
+// @Failure 400 {object} ErrorResponse "Bad request"
+// @Failure 404 {object} GetAgentsResponse "No agents found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /agents [get]
 func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 	// Handle query params
 	var queryParams GetAgentsQueryParams
@@ -165,6 +193,17 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 	})
 }
 
+// HandleGetAgentDetail handles getting details about each agent
+// @Summary Get details of a specific agent
+// @Description Retrieve detailed information of a specific agent by ID
+// @Tags agents
+// @Accept json
+// @Produce json
+// @Param agent_id path int true "ID of the agent to retrieve"
+// @Success 200 {object} AgentDetailedResponse "Successfully retrieved agent details"
+// @Failure 400 {object} ErrorResponse "Bad request"
+// @Failure 404 {object} ErrorResponse "Agent not found"
+// @Router /agents/{agent_id} [get]
 func (gh *GinHandler) HandleGetAgentDetail(ctx *gin.Context) {
 	// Parsing the agent_id
 	agentIDParam, err := strconv.Atoi(ctx.Param("agent_id"))
