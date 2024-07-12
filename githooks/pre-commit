@@ -17,6 +17,11 @@ if command -v goimports; then
 	echo "find . -name '*.go' ! -path './vendor/*' -type f | xargs goimports -w"
 	find . -name '*.go' ! -path './vendor/*' -type f | xargs goimports -w
 fi
+# Swagger
+if command -v swag; then
+  echo "swag init -g ./cmd/argus/main.go -o api"
+  swag init -g ./cmd/argus/main.go -o api
+fi
 
 if git rev-parse --verify HEAD >/dev/null 2>&1
 then
