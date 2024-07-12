@@ -5,12 +5,15 @@ import (
 	"argus/internal/db"
 	"argus/internal/routes"
 	"argus/pkg/logger"
+	"context"
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
+	ctx := context.Background()
+
 	// Load the config
 	var cfg config.Config
 	err := cleanenv.ReadEnv(&cfg)
@@ -45,7 +48,7 @@ Configuration: %+v
 	logger.Info("logger is setup successfully")
 
 	// Create new instance of dg.DB
-	gormDB, err := db.NewGormDB(cfg, logger.GetLogger())
+	gormDB, err := db.NewGormDB(ctx, cfg, logger.GetLogger())
 	if err != nil {
 		log.WithError(err).Fatal("error in connecting to the postgres database")
 	}

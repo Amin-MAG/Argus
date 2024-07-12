@@ -17,6 +17,10 @@ services:
     restart: on-failure
     depends_on:
       - database
+      - prometheus
+      - grafana
+    ports:
+      - "8081:8081"
 
   prometheus:
     image: prom/prometheus:v2.51.2

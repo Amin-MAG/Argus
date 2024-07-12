@@ -14,7 +14,7 @@ type Config struct {
 	}
 	Database struct {
 		Host     string `env:"POSTGRES_HOST" env-default:"localhost" env-description:"Database host for service"`
-		Port     int    `env:"POSTGRES_PORT" env-default:"5432" env-description:"Database port for service"`
+		Port     string `env:"POSTGRES_PORT" env-default:"5432" env-description:"Database port for service"`
 		Name     string `env:"POSTGRES_NAME" env-default:"argus_db" env-description:"Database name for service"`
 		Username string `env:"POSTGRES_USERNAME" env-default:"argus" env-description:"Database username for service"`
 		Password string `env:"POSTGRES_PASSWORD" env-default:"test" env-description:"Database password for service"`
