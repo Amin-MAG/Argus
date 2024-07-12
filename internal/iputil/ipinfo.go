@@ -1,8 +1,10 @@
 package iputil
 
 import (
+	tracing "argus/pkg/otel"
 	"context"
 	"github.com/ipinfo/go/v2/ipinfo"
+	"go.opentelemetry.io/otel"
 	"net"
 )
 
@@ -19,6 +21,9 @@ func NewArgusIPClient(client IPInfoClient) (IPStatsGatherer, error) {
 }
 
 func (ipi *ArgusIPInfoClient) GetInfo(ctx context.Context, ip string) (*Stats, error) {
+	ctx, span := otel.Tracer(tracing.TracerName()).Start(ctx, "GeIPInfo")
+	defer span.End()
+
 	resultChan := make(chan struct {
 		info *ipinfo.Core
 		err  error

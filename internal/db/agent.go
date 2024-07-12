@@ -1,8 +1,10 @@
 package db
 
 import (
+	tracing "argus/pkg/otel"
 	"context"
 	"fmt"
+	"go.opentelemetry.io/otel"
 	"time"
 )
 
@@ -34,12 +36,18 @@ type AgentsResult struct {
 
 // CreateNewAgent creates a new agent in the database
 func (gdb *GormDB) CreateNewAgent(ctx context.Context, a *Agent) (*Agent, error) {
+	ctx, span := otel.Tracer(tracing.TracerName()).Start(ctx, "CreateNewAgent")
+	defer span.End()
+
 	a.CreatedAt = time.Now()
 
 	return a, gdb.db.Create(a).Error
 }
 
 func (gdb *GormDB) GetAllAgents(ctx context.Context, filter *AgentFilter, page int, pageSize int, sort *AgentSort) (*AgentsResult, error) {
+	ctx, span := otel.Tracer(tracing.TracerName()).Start(ctx, "GetAllAgents")
+	defer span.End()
+
 	var agents []Agent
 	var count int64
 
@@ -85,6 +93,9 @@ func (gdb *GormDB) GetAllAgents(ctx context.Context, filter *AgentFilter, page i
 }
 
 func (gdb *GormDB) GetAgentByID(ctx context.Context, agentID uint) (*Agent, error) {
+	ctx, span := otel.Tracer(tracing.TracerName()).Start(ctx, "GetAgentByID")
+	defer span.End()
+
 	var agent Agent
 	return &agent, gdb.db.Where("id = ?", agentID).First(&agent).Error
 }

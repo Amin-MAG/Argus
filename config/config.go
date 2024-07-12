@@ -31,7 +31,12 @@ type Config struct {
 		SQLTraceLogEnable  bool   `env:"LOGGER_SQL_TRACE_LOG_ENABLE" env-default:"false" env-description:"Does the logger print low level SQL logs"`
 		IsReportCallerMode bool   `env:"LOGGER_IS_REPORT_CALLER_MODE" env-default:"false" env-description:"Does the logger have report caller"`
 		IsPrettyPrint      bool   `env:"LOGGER_PRETTY_PRINT" env-default:"false" env-description:"Pretty JSON Print flag"`
-		FilePath           string `env:"LOGGER_FILE" env-default:"service.log" env-description:"The file that stores the logs of service"`
+	}
+	Tracing struct {
+		Enabled      bool    `env:"IS_TRACING_ENABLED"  env-default:"false" env-description:"activate tracing"`
+		Endpoint     string  `env:"JAEGER_ENDPOINT" env-default:"http://localhost:14268/api/traces" env-description:"Endpoint to send tracing requests"`
+		ServiceName  string  `env:"JAEGER_SERVICE_NAME" env-default:"argus" env-description:"URL for backup generation"`
+		SamplerRatio float64 `env:"TRACING_SAMPLE_RATIO" env-default:"0.5" env-description:"ratio to send tracing info"`
 	}
 }
 

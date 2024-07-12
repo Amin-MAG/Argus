@@ -6,6 +6,7 @@ import (
 	"argus/internal/iputil"
 	"argus/internal/routes"
 	"argus/pkg/logger"
+	tracing "argus/pkg/otel"
 	"context"
 	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
@@ -48,6 +49,20 @@ Configuration: %+v
 	}
 	logger.SetupLogger(log)
 	logger.Info("logger is setup successfully")
+
+	// Setup tracing
+	if cfg.Tracing.Enabled {
+		err = tracing.InitTracing(cfg.Tracing.ServiceName, cfg.Argus.Version, cfg.Tracing.SamplerRatio, cfg.Tracing.Endpoint)
+		if err != nil {
+			log.WithError(err).Fatal("cannot initialize tracing")
+		}
+		defer func() {
+			if err = tracing.Shutdown(context.Background()); err != nil {
+				log.WithError(err).Fatal("error in tracing shutdown")
+			}
+		}()
+		log.Info("tracing package initialized and configured")
+	}
 
 	// Create new instance of dg.DB
 	gormDB, err := db.NewGormDB(ctx, cfg, logger.GetLogger())

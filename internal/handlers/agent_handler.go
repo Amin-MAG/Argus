@@ -3,9 +3,11 @@ package handlers
 import (
 	"argus/internal/db"
 	"argus/pkg/logger"
+	tracing "argus/pkg/otel"
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel"
 	"math"
 	"net/http"
 	"slices"
@@ -40,11 +42,14 @@ var (
 // @Failure 400 {object} ErrorResponse "Bad request"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /agents [post]
-func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
+func (gh *GinHandler) HandleCreateAgent(c *gin.Context) {
+	ctx, span := otel.Tracer(tracing.TracerName()).Start(c, "HandleCreateAgent")
+	defer span.End()
+
 	var createRequest CreateAgentRequest
-	if err := ctx.ShouldBindJSON(&createRequest); err != nil {
+	if err := c.ShouldBindJSON(&createRequest); err != nil {
 		logger.WithError(err).Debug("cannot parse create new agent request")
-		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "cannot parse request body"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "cannot parse request body"})
 		return
 	}
 
@@ -52,7 +57,7 @@ func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 	err := createRequest.validate()
 	if err != nil {
 		logger.WithError(err).Debug("cannot validate create new agent request")
-		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -64,12 +69,12 @@ func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			logger.WithField("ip", createRequest.IPAddress).WithError(err).Warn("timeout exceeded for IPInfo API")
-			ctx.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: "timeout exceeded"})
+			c.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: "timeout exceeded"})
 			return
 		}
 
 		logger.WithField("ip", createRequest.IPAddress).WithError(err).Warn("cannot gather statistics for this IP address")
-		ctx.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: "cannot gather statistics for this IP address"})
+		c.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: "cannot gather statistics for this IP address"})
 		return
 	}
 
@@ -84,11 +89,11 @@ func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 	})
 	if err != nil {
 		logger.WithError(err).Warn("cannot create agent")
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "cannot create agent"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "cannot create agent"})
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, CreateAgentResponse{
+	c.JSON(http.StatusCreated, CreateAgentResponse{
 		Message: "agent has been created successfully",
 		Agent: Agent{
 			ID:        agent.ID,
@@ -119,12 +124,15 @@ func (gh *GinHandler) HandleCreateAgent(ctx *gin.Context) {
 // @Failure 404 {object} GetAgentsResponse "No agents found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /agents [get]
-func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
+func (gh *GinHandler) HandleGetAgents(c *gin.Context) {
+	ctx, span := otel.Tracer(tracing.TracerName()).Start(c, "HandleGetAgents")
+	defer span.End()
+
 	// Handle query params
 	var queryParams GetAgentsQueryParams
-	if err := ctx.ShouldBindQuery(&queryParams); err != nil {
+	if err := c.ShouldBindQuery(&queryParams); err != nil {
 		logger.WithError(err).Debug("cannot bind query params")
-		ctx.JSON(http.StatusBadRequest, ErrorResponse{Error: "bad query params"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "bad query params"})
 		return
 	}
 	if queryParams.Page == 0 {
@@ -141,7 +149,7 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 	if queryParams.SortBy != "" {
 		if !slices.Contains(ValidAgentSorts, queryParams.SortBy) {
 			logger.WithField("sort_by", queryParams.SortBy).Debug("cannot parse the sort by parameter")
-			ctx.JSON(http.StatusBadRequest, ErrorResponse{
+			c.JSON(http.StatusBadRequest, ErrorResponse{
 				Error: "the valid fields are: id",
 			})
 			return
@@ -151,7 +159,7 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 	if queryParams.Order != "" {
 		if !slices.Contains(ValidAgentOrders, queryParams.Order) {
 			logger.WithField("order", queryParams.Order).Debug("cannot parse the order parameter")
-			ctx.JSON(http.StatusBadRequest, ErrorResponse{
+			c.JSON(http.StatusBadRequest, ErrorResponse{
 				Error: "the valid fields are: asc, desc",
 			})
 			return
@@ -163,7 +171,7 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 	agentsResult, err := gh.db.GetAllAgents(ctx, agentsFilter, queryParams.Page, queryParams.PageSize, agentSort)
 	if err != nil {
 		logger.WithError(err).Warn("cannot retrieve the agents from the database")
-		ctx.JSON(http.StatusInternalServerError, ErrorResponse{Error: "cannot retrieve the agents from the database"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "cannot retrieve the agents from the database"})
 		return
 	}
 	agentStats := AgentPagination{
@@ -175,7 +183,7 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 
 	// Handle no agent found
 	if len(agentsResult.Agents) == 0 {
-		ctx.JSON(http.StatusNotFound, GetAgentsResponse{
+		c.JSON(http.StatusNotFound, GetAgentsResponse{
 			Message: "there is no agents for this page",
 			Data: AgentsData{
 				Agents:     []Agent{},
@@ -196,7 +204,7 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 		})
 	}
 
-	ctx.JSON(http.StatusOK, GetAgentsResponse{
+	c.JSON(http.StatusOK, GetAgentsResponse{
 		Message: "retrieved agents successfully",
 		Data: AgentsData{
 			Agents:     agents,
@@ -216,12 +224,15 @@ func (gh *GinHandler) HandleGetAgents(ctx *gin.Context) {
 // @Failure 400 {object} ErrorResponse "Bad request"
 // @Failure 404 {object} ErrorResponse "Agent not found"
 // @Router /agents/{agent_id} [get]
-func (gh *GinHandler) HandleGetAgentDetail(ctx *gin.Context) {
+func (gh *GinHandler) HandleGetAgentDetail(c *gin.Context) {
+	ctx, span := otel.Tracer(tracing.TracerName()).Start(c, "HandleGetAgentDetail")
+	defer span.End()
+
 	// Parsing the agent_id
-	agentIDParam, err := strconv.Atoi(ctx.Param("agent_id"))
+	agentIDParam, err := strconv.Atoi(c.Param("agent_id"))
 	if err != nil {
 		logger.WithError(err).Warn("cannot parse agent id")
-		ctx.JSON(http.StatusBadRequest, ErrorResponse{
+		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error: "agent_id is not provided or is not valid",
 		})
 		return
@@ -232,11 +243,11 @@ func (gh *GinHandler) HandleGetAgentDetail(ctx *gin.Context) {
 	agent, err := gh.db.GetAgentByID(ctx, agentID)
 	if err != nil {
 		logger.WithError(err).Warn("cannot retrieve agent by id")
-		ctx.JSON(http.StatusNotFound, ErrorResponse{Error: "cannot find such agent by id"})
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "cannot find such agent by id"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, AgentDetailedResponse{
+	c.JSON(http.StatusOK, AgentDetailedResponse{
 		Message: "agent has been retrieved successfully",
 		Agent: Agent{
 			ID:        agent.ID,
