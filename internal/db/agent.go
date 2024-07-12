@@ -13,6 +13,9 @@ type Agent struct {
 	IPAddress string `gorm:"index,not null"`
 	ASN       string
 	ISP       string
+	City      string
+	Country   string
+	Location  string
 }
 
 type AgentFilter struct {

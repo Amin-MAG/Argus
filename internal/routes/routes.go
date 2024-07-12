@@ -4,6 +4,7 @@ import (
 	"argus/config"
 	"argus/internal/db"
 	"argus/internal/handlers"
+	"argus/internal/iputil"
 	"argus/pkg/logger"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -14,7 +15,7 @@ import (
 const ApiV1 = "/api/v1"
 
 // NewGinServer creates a new Server instance.
-func NewGinServer(cfg config.Config, db db.DB) (*http.Server, error) {
+func NewGinServer(cfg config.Config, db db.DB, ipStatsGatherer iputil.IPStatsGatherer) (*http.Server, error) {
 	// Gin Configuration
 	gin.SetMode(cfg.Argus.GinMode)
 
@@ -34,7 +35,7 @@ func NewGinServer(cfg config.Config, db db.DB) (*http.Server, error) {
 	logger.Info("new gin server has been created")
 
 	// Create new Gin handler
-	ginHandler := handlers.NewGinHandler(cfg, db)
+	ginHandler := handlers.NewGinHandler(cfg, db, ipStatsGatherer)
 
 	// Register routes of modules
 	v1 := engine.Group(ApiV1)

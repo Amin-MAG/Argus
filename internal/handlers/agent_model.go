@@ -6,17 +6,15 @@ import (
 	"time"
 )
 
-type AgentResponse struct {
-	ID        uint   `json:"id"`
-	IPAddress string `json:"ip_address"`
-}
-
-type AgentDetailedResponse struct {
-	ID        uint      `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	IPAddress string    `json:"ip_address"`
-	ASN       string    `json:"asn"`
-	ISP       string    `json:"isp"`
+type Agent struct {
+	ID        uint      `json:"id,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	IPAddress string    `json:"ip_address,omitempty"`
+	ASN       string    `json:"asn,omitempty"`
+	ISP       string    `json:"isp,omitempty"`
+	City      string    `json:"city,omitempty"`
+	Country   string    `json:"country,omitempty"`
+	Location  string    `json:"location,omitempty"`
 }
 
 type CreateAgentRequest struct {
@@ -33,8 +31,8 @@ func (req CreateAgentRequest) validate() error {
 }
 
 type CreateAgentResponse struct {
-	Message string                `json:"message"`
-	Agent   AgentDetailedResponse `json:"data"`
+	Message string `json:"message"`
+	Agent   Agent  `json:"agent"`
 }
 
 type GetAgentsQueryParams struct {
@@ -53,11 +51,16 @@ type AgentPagination struct {
 }
 
 type AgentsData struct {
-	Agents     []AgentResponse `json:"agents"`
+	Agents     []Agent         `json:"agents"`
 	Pagination AgentPagination `json:"pagination"`
 }
 
 type GetAgentsResponse struct {
 	Message string     `json:"message"`
 	Data    AgentsData `json:"data"`
+}
+
+type AgentDetailedResponse struct {
+	Message string `json:"message,omitempty"`
+	Agent   Agent  `json:"agent,omitempty"`
 }

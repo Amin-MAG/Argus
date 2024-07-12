@@ -3,6 +3,7 @@ package main
 import (
 	"argus/config"
 	"argus/internal/db"
+	"argus/internal/iputil"
 	"argus/internal/routes"
 	"argus/pkg/logger"
 	"context"
@@ -54,8 +55,14 @@ Configuration: %+v
 	}
 	log.Info("connected to the argus database")
 
+	// Create the IP Info client
+	ipInfoClient, err := iputil.NewIPInfoClient(cfg.IPInfo.Token)
+	if err != nil {
+		log.WithError(err).Fatal(err)
+	}
+
 	// Create Gin HTTP Server
-	s, err := routes.NewGinServer(cfg, gormDB)
+	s, err := routes.NewGinServer(cfg, gormDB, ipInfoClient)
 	if err != nil {
 		log.WithError(err).Fatal("error in creating API server")
 	}

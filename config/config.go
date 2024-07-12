@@ -12,6 +12,9 @@ type Config struct {
 		GinMode string `env:"GIN_MODE" env-default:"debug" env-description:"Gin framework mode (release or debug)"`
 		Port    string `env:"SERVING_PORT" env-default:"8081" env-description:"Port number for Argus API"`
 	}
+	IPInfo struct {
+		Token string `env:"IP_INFO_TOKEN" env-default:"<secret>" env-description:"Token used to connect to IP Info API"`
+	}
 	Database struct {
 		Host     string `env:"POSTGRES_HOST" env-default:"localhost" env-description:"Database host for service"`
 		Port     string `env:"POSTGRES_PORT" env-default:"5432" env-description:"Database port for service"`
@@ -47,6 +50,7 @@ func (c Config) SecureClone() Config {
 
 	// Censor critical values
 	maskConfig(&sc.Database.Password)
+	maskConfig(&sc.IPInfo.Token)
 
 	return sc
 }
