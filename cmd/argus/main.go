@@ -12,6 +12,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/ipinfo/go/v2/ipinfo"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 func main() {
@@ -43,9 +44,14 @@ Configuration: %+v
 	log.SetLevel(logLevel)
 	log.SetReportCaller(cfg.Logger.IsReportCallerMode)
 	if cfg.Logger.IsPrettyPrint {
-		log.SetFormatter(&logrus.JSONFormatter{})
+		log.SetFormatter(&logrus.JSONFormatter{
+			TimestampFormat: time.DateTime,
+		})
 	} else {
-		log.SetFormatter(&logrus.TextFormatter{ForceColors: true})
+		log.SetFormatter(&logrus.TextFormatter{
+			TimestampFormat: time.DateTime,
+			ForceColors:     true,
+		})
 	}
 	logger.SetupLogger(log)
 	logger.Info("logger is setup successfully")

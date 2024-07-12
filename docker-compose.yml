@@ -42,6 +42,8 @@ services:
       - "3000:3000"
     env_file:
       - .env.compose
+    volumes:
+      - grafana_data:/var/lib/grafana
 
   jaeger:
     image: jaegertracing/all-in-one:1.29
@@ -52,3 +54,5 @@ services:
 
 volumes:
   argus_db_data:
+  grafana_data:
+    external: false
