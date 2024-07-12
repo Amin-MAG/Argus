@@ -19,19 +19,38 @@ func NewArgusIPClient(client IPInfoClient) (IPStatsGatherer, error) {
 }
 
 func (ipi *ArgusIPInfoClient) GetInfo(ctx context.Context, ip string) (*Stats, error) {
-	info, err := ipi.client.GetIPInfo(net.ParseIP(ip))
-	if err != nil {
-		return nil, err
-	}
+	resultChan := make(chan struct {
+		info *ipinfo.Core
+		err  error
+	}, 1)
 
-	return &Stats{
-		IP:          info.IP,
-		City:        info.City,
-		Region:      info.Region,
-		Country:     info.Country,
-		CountryName: info.CountryName,
-		Location:    info.Location,
-		ISP:         info.ASN.Name,
-		ASN:         info.ASN.ASN,
-	}, nil
+	go func() {
+		info, err := ipi.client.GetIPInfo(net.ParseIP(ip))
+		resultChan <- struct {
+			info *ipinfo.Core
+			err  error
+		}{
+			info: info,
+			err:  err,
+		}
+	}()
+
+	select {
+	case result := <-resultChan:
+		if result.err != nil {
+			return nil, result.err
+		}
+		return &Stats{
+			IP:          result.info.IP,
+			City:        result.info.City,
+			Region:      result.info.Region,
+			Country:     result.info.Country,
+			CountryName: result.info.CountryName,
+			Location:    result.info.Location,
+			ISP:         result.info.ASN.Name,
+			ASN:         result.info.ASN.ASN,
+		}, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
