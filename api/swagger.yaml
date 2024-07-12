@@ -1,0 +1,202 @@
+definitions:
+  handlers.Agent:
+    properties:
+      asn:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      ip_address:
+        type: string
+      isp:
+        type: string
+      location:
+        type: string
+    type: object
+  handlers.AgentDetailedResponse:
+    properties:
+      agent:
+        $ref: '#/definitions/handlers.Agent'
+      message:
+        type: string
+    type: object
+  handlers.AgentPagination:
+    properties:
+      current_page:
+        type: integer
+      per_page:
+        type: integer
+      total_agents:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  handlers.AgentsData:
+    properties:
+      agents:
+        items:
+          $ref: '#/definitions/handlers.Agent'
+        type: array
+      pagination:
+        $ref: '#/definitions/handlers.AgentPagination'
+    type: object
+  handlers.CreateAgentRequest:
+    properties:
+      ip_address:
+        type: string
+    type: object
+  handlers.CreateAgentResponse:
+    properties:
+      agent:
+        $ref: '#/definitions/handlers.Agent'
+      message:
+        type: string
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  handlers.GetAgentsResponse:
+    properties:
+      data:
+        $ref: '#/definitions/handlers.AgentsData'
+      message:
+        type: string
+    type: object
+  handlers.PingResponse:
+    properties:
+      database_status:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /agents:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of agents based on optional query parameters
+      parameters:
+      - description: Page number for pagination (default is 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of agents per page (default is 10)
+        in: query
+        name: page_size
+        type: integer
+      - description: Filter agents by IP address
+        in: query
+        name: ip_address
+        type: string
+      - description: Field to sort agents by (e.g., 'id')
+        in: query
+        name: sort_by
+        type: string
+      - description: Sorting order ('asc' or 'desc')
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved agents
+          schema:
+            $ref: '#/definitions/handlers.GetAgentsResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: No agents found
+          schema:
+            $ref: '#/definitions/handlers.GetAgentsResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get a list of agents
+      tags:
+      - agents
+    post:
+      consumes:
+      - application/json
+      description: Create a new agent with the provided IP address and retrieve its
+        details
+      parameters:
+      - description: Request body for creating a new agent
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateAgentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created agent
+          schema:
+            $ref: '#/definitions/handlers.CreateAgentResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a new agent
+      tags:
+      - agents
+  /agents/{agent_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information of a specific agent by ID
+      parameters:
+      - description: ID of the agent to retrieve
+        in: path
+        name: agent_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved agent details
+          schema:
+            $ref: '#/definitions/handlers.AgentDetailedResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Agent not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get details of a specific agent
+      tags:
+      - agents
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: Check if the health of system is ok or not
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PingResponse'
+      summary: Check health status
+      tags:
+      - ping
+swagger: "2.0"
