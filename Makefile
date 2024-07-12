@@ -4,4 +4,4 @@ build:
 
 test:
 	@echo "Testing..."
-	@go test -v -cover -mod=mod ./...
+	@go test -v -cover -mod=mod ./... -coverprofile=coverage.out
