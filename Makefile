@@ -6,6 +6,6 @@ test:
 	@echo "Testing..."
 	@go test -v -cover -mod=mod ./... -coverprofile=coverage.out
 
-load-test:
+k6:
 	@echo "Load testing..."
 	@k6 run test/k6/script.js
