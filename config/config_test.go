@@ -70,13 +70,11 @@ func TestSecureClone(t *testing.T) {
 			SQLTraceLogEnable  bool   `env:"LOGGER_SQL_TRACE_LOG_ENABLE" env-default:"false" env-description:"Does the logger print low level SQL logs"`
 			IsReportCallerMode bool   `env:"LOGGER_IS_REPORT_CALLER_MODE" env-default:"false" env-description:"Does the logger have report caller"`
 			IsPrettyPrint      bool   `env:"LOGGER_PRETTY_PRINT" env-default:"false" env-description:"Pretty JSON Print flag"`
-			FilePath           string `env:"LOGGER_FILE" env-default:"service.log" env-description:"The file that stores the logs of service"`
 		}{
 			Level:              "info",
 			SQLTraceLogEnable:  true,
 			IsReportCallerMode: true,
 			IsPrettyPrint:      false,
-			FilePath:           "/var/log/argus.log",
 		},
 	}
 
