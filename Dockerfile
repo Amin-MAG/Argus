@@ -13,4 +13,6 @@ FROM gcr.io/distroless/base-debian10
 
 COPY --from=builder /app/cmd/argus/argus_service /app/argus_service
 
+EXPOSE 8081
+
 CMD ["/app/argus_service"]

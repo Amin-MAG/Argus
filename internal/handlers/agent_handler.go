@@ -236,7 +236,7 @@ func (gh *GinHandler) HandleGetAgentDetail(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, AgentDetailedResponse{
+	ctx.JSON(http.StatusOK, AgentDetailedResponse{
 		Message: "agent has been retrieved successfully",
 		Agent: Agent{
 			ID:        agent.ID,
